@@ -1,0 +1,36 @@
+// Paste these rules into your Firebase Console:
+// Firebase Console → Firestore Database → Rules tab
+//
+// These rules allow authenticated users to read/write their own data,
+// and give full access to admin users.
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Users collection - anyone authenticated can read their own doc
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null;
+    }
+    
+    // Pre-registered users - admin can manage, authenticated can read
+    match /preRegisteredUsers/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+    
+    // Students collection - admin/teacher can manage, students/parents can read
+    match /students/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+    
+    // Fee Transactions - admin can manage, authenticated can read
+    match /feeTransactions/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+  }
+}

@@ -1,0 +1,590 @@
+/* Admin Dashboard - Emerald/teal sidebar theme */
+.container {
+  min-height: 100vh;
+  background: #f7f8fc;
+  color: #1e293b;
+}
+
+.header {
+  background: #ffffff;
+  padding: 1.25rem 0;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+}
+
+.navLinks {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #64748b;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.875rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.link:hover {
+  color: #1e293b;
+  background: #f1f5f9;
+}
+
+.activeLink {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.875rem;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #059669, #10b981);
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
+}
+
+.main {
+  padding: 2rem;
+}
+
+/* ── Override .glass inside admin ── */
+.container :global(.glass) {
+  background: #ffffff;
+  border: 1px solid #e8eaed;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.02);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  color: #1e293b;
+}
+
+.container :global(.text-gradient) {
+  background: linear-gradient(135deg, #059669, #10b981);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.container :global(.btn-primary) {
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+}
+
+.container :global(.btn-primary):hover {
+  background: linear-gradient(135deg, #047857, #059669);
+}
+
+.container :global(.btn-primary):disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.container h2 {
+  color: #1e293b;
+}
+
+.container h3 {
+  color: #1e293b;
+}
+
+/* ── Stats Row ── */
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.statCard {
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  text-align: center;
+  border-radius: 14px;
+}
+
+.statCount {
+  font-size: 1.75rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.statLabel {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+/* ── Grid ── */
+.grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ── Forms ── */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.formField {
+  display: flex;
+  flex-direction: column;
+}
+
+.label {
+  display: block;
+  font-size: 0.82rem;
+  color: #64748b;
+  margin-bottom: 0.4rem;
+  font-weight: 600;
+}
+
+.input {
+  width: 100%;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.input:focus {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.input option {
+  background: #fff;
+  color: #1e293b;
+}
+
+/* ── Search ── */
+.searchBox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  color: #94a3b8;
+}
+
+.searchInput {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #1e293b;
+  font-size: 0.88rem;
+  width: 160px;
+}
+
+.searchInput::placeholder {
+  color: #94a3b8;
+}
+
+/* ── Filter Tabs ── */
+.filterTabs {
+  display: flex;
+  gap: 0.2rem;
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 0.2rem;
+}
+
+.filterTab {
+  padding: 0.4rem 0.7rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: capitalize;
+  border: none;
+  background: transparent;
+  font-weight: 500;
+}
+
+.filterTab:hover {
+  color: #1e293b;
+}
+
+.filterTabActive {
+  background: #fff;
+  color: #059669;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+/* ── User List ── */
+.userList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.userItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.875rem 1.125rem;
+  background: #f8fafc;
+  border: 1px solid #e8eaed;
+  border-radius: 10px;
+  transition: all 0.15s ease;
+}
+
+.userItem:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.userItem h4 {
+  color: #1e293b;
+}
+
+.deleteBtn {
+  color: #ef4444;
+  padding: 0.4rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.deleteBtn:hover {
+  background: #fef2f2;
+}
+
+/* ── Role Badge ── */
+.roleBadge {
+  text-transform: capitalize;
+  font-weight: 600;
+  font-size: 0.78rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+}
+
+.roleBadge[data-role="student"] {
+  color: #2563eb;
+  background: #eff6ff;
+}
+
+.roleBadge[data-role="teacher"] {
+  color: #059669;
+  background: #ecfdf5;
+}
+
+.roleBadge[data-role="parent"] {
+  color: #d97706;
+  background: #fffbeb;
+}
+
+.roleBadge[data-role="admin"] {
+  color: #db2777;
+  background: #fdf2f8;
+}
+
+/* ── Table ── */
+.tableWrapper {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid #e8eaed;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.table thead {
+  background: #f8fafc;
+}
+
+.table th {
+  padding: 0.875rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 0.875rem 1rem;
+  border-top: 1px solid #f1f5f9;
+  vertical-align: middle;
+  color: #334155;
+}
+
+.table tbody tr {
+  transition: background 0.12s ease;
+}
+
+.table tbody tr:hover {
+  background: #f8fafc;
+}
+
+/* ── Grade Badge ── */
+.gradeBadge {
+  background: #eff6ff;
+  color: #2563eb;
+  padding: 0.2rem 0.55rem;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+
+/* ── Inline Edit ── */
+.inlineInput {
+  background: #fff;
+  border: 1.5px solid #10b981;
+  color: #1e293b;
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  width: 100px;
+  outline: none;
+}
+
+/* ── Status Badge ── */
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 0.76rem;
+  text-transform: capitalize;
+}
+
+.statusBadge[data-status="paid"] {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.statusBadge[data-status="partial"] {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+.statusBadge[data-status="pending"] {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+/* ── Action Buttons ── */
+.actionBtns {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.actionBtn {
+  padding: 0.35rem;
+  border-radius: 6px;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: transparent;
+  border: none;
+}
+
+.actionBtn:hover {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.actionBtnPrimary {
+  padding: 0.3rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+  white-space: nowrap;
+}
+
+.actionBtnPrimary:hover {
+  background: #d1fae5;
+  box-shadow: 0 2px 6px rgba(5, 150, 105, 0.12);
+}
+
+.actionBtnSuccess {
+  padding: 0.3rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+  white-space: nowrap;
+}
+
+.actionBtnSuccess:hover {
+  background: #dbeafe;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.12);
+}
+
+.actionBtnSuccess:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Transaction List ── */
+.transactionList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.transactionItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+  border-radius: 8px;
+  transition: background 0.12s ease;
+}
+
+.transactionItem:hover {
+  background: #f1f5f9;
+}
+
+/* ── Modal ── */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  animation: fadeInOverlay 0.2s ease;
+}
+
+@keyframes fadeInOverlay {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal {
+  width: 90%;
+  max-width: 480px;
+  padding: 2rem;
+  background: #fff !important;
+  border-radius: 20px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.12) !important;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.modalHeader h3 {
+  color: #1e293b;
+}
+
+.modalClose {
+  padding: 0.35rem;
+  border-radius: 6px;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: transparent;
+  border: none;
+}
+
+.modalClose:hover {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .navLinks {
+    gap: 0.3rem;
+    flex-wrap: wrap;
+  }
+
+  .link, .activeLink {
+    font-size: 0.82rem;
+    padding: 0.35rem 0.5rem;
+  }
+
+  .statsRow {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+
+  .filterTabs {
+    flex-wrap: wrap;
+  }
+
+  .header .container {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .main {
+    padding: 1.25rem 1rem;
+  }
+}
