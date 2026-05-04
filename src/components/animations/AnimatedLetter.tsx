@@ -14,20 +14,29 @@ export function AnimatedLetter({ text, className }: { text: string, className?: 
 
   return (
     <p ref={containerRef} className={className} style={{ display: 'inline' }}>
-      {chars.map((char, i) => {
-        const charProgress = i / chars.length;
-        const start = Math.max(0, charProgress - 0.1);
-        const end = Math.min(1, charProgress + 0.05);
-        
-        // eslint-disable-next-line react-hooks/rules-of-hooks
-        const opacity = useTransform(scrollYProgress, [start, end], [0.2, 1]);
-        
-        return (
-          <motion.span key={i} style={{ opacity }}>
-            {char}
-          </motion.span>
-        );
-      })}
+      {chars.map((char, i) => (
+        <Letter 
+          key={i} 
+          char={char} 
+          index={i} 
+          total={chars.length} 
+          progress={scrollYProgress} 
+        />
+      ))}
     </p>
+  );
+}
+
+function Letter({ char, index, total, progress }: { char: string, index: number, total: number, progress: any }) {
+  const charProgress = index / total;
+  const start = Math.max(0, charProgress - 0.1);
+  const end = Math.min(1, charProgress + 0.05);
+  
+  const opacity = useTransform(progress, [start, end], [0.2, 1]);
+  
+  return (
+    <motion.span style={{ opacity }}>
+      {char}
+    </motion.span>
   );
 }

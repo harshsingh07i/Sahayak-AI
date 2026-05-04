@@ -5,7 +5,10 @@ import { User, onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 
-type AppUser = User & { role?: "teacher" | "student" | "parent" | "admin" };
+type AppUser = User & { 
+  role?: "teacher" | "student" | "parent" | "admin";
+  name?: string;
+};
 
 interface AuthContextType {
   user: AppUser | null;
@@ -24,13 +27,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        // Fetch role from Firestore
+        // Fetch role and name from Firestore
         try {
           const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
           const userData = userDoc.data();
-          setUser({ ...firebaseUser, role: userData?.role });
+          setUser({ 
+            ...firebaseUser, 
+            role: userData?.role,
+            name: userData?.name || firebaseUser.displayName || ""
+          });
         } catch (error) {
-          console.error("Error fetching user role", error);
+          console.error("Error fetching user data", error);
           setUser(firebaseUser);
         }
       } else {

@@ -24,7 +24,7 @@ export function WordsPullUp({ text, className, showAsterisk }: WordsPullUpProps)
         staggerChildren: 0.08,
       },
     },
-  };
+  } as const;
 
   const itemVariants = {
     hidden: { y: 20, opacity: 0 },
@@ -33,7 +33,7 @@ export function WordsPullUp({ text, className, showAsterisk }: WordsPullUpProps)
       opacity: 1,
       transition: { type: "spring", stiffness: 100, damping: 12 },
     },
-  };
+  } as const;
 
   return (
     <motion.h1
@@ -66,7 +66,7 @@ export function WordsPullUpMultiStyle({ segments, className }: { segments: {text
       opacity: 1,
       transition: { staggerChildren: 0.08 },
     },
-  };
+  } as const;
 
   const itemVariants = {
     hidden: { y: 20, opacity: 0 },
@@ -75,7 +75,7 @@ export function WordsPullUpMultiStyle({ segments, className }: { segments: {text
       opacity: 1,
       transition: { type: "spring", stiffness: 100, damping: 12 },
     },
-  };
+  } as const;
 
   return (
     <motion.div
