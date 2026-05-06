@@ -23,8 +23,9 @@
   flex-direction: column;
   position: fixed;
   height: 100vh;
-  z-index: 40;
+  z-index: 100;
   box-shadow: 4px 0 24px rgba(0, 0, 0, 0.08);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .sidebarHeader {
@@ -166,6 +167,7 @@
   display: flex;
   flex-direction: column;
   background: #f7f8fc;
+  transition: margin-left 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .topHeader {
@@ -358,13 +360,47 @@
 }
 
 /* ── Responsive ── */
-@media (max-width: 768px) {
+.menuToggle {
+  display: none;
+  background: transparent;
+  border: none;
+  color: #1e293b;
+  cursor: pointer;
+  padding: 0.5rem;
+  z-index: 110;
+}
+
+.drawerBackdrop {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(4px);
+  z-index: 90;
+}
+
+@media (max-width: 1024px) {
   .sidebar {
-    width: 220px;
+    transform: translateX(-100%);
+  }
+  .sidebar.mobileOpen {
+    transform: translateX(0);
   }
   .mainContent {
-    margin-left: 220px;
+    margin-left: 0;
   }
+  .menuToggle {
+    display: block;
+  }
+  .drawerBackdrop.mobileOpen {
+    display: block;
+  }
+}
+
+@media (max-width: 768px) {
   .feedGrid, .aiToolsGrid, .statsGrid {
     grid-template-columns: 1fr;
   }
@@ -376,19 +412,39 @@
   }
 }
 
-@media (max-width: 640px) {
-  .sidebar {
-    width: 60px;
-    overflow: hidden;
-  }
-  .sidebarHeader h2, .roleBadge, .navItem span, .userDetails, .logoutBtn span {
-    display: none;
-  }
-  .navItem {
-    justify-content: center;
-    padding: 0.875rem;
-  }
-  .mainContent {
-    margin-left: 60px;
-  }
+/* Submission Styles */
+.submissionList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.submissionItem {
+  padding: 1.25rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.submissionInfo h4 {
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.submissionInfo p {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.submissionStatus {
+  background: #dcfce7;
+  color: #166534;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
 }

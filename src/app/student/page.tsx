@@ -3,21 +3,20 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { BookOpen, FileText, Bot, DollarSign, LogOut, CheckCircle, Activity } from "lucide-react";
+import { BookOpen, FileText, Bot, DollarSign, LogOut, CheckCircle, Activity, Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { WordsPullUpMultiStyle } from "@/components/animations/WordsPullUp";
 import styles from "./student.module.css";
 import { auth, db } from "@/lib/firebase";
-import { collection, query, where, getDocs, orderBy, limit } from "firebase/firestore";
+import { collection, query, where, getDocs, orderBy, limit, addDoc, serverTimestamp } from "firebase/firestore";
 import AIToolRunner from "@/components/AIToolRunner";
 import ProfileModal from "@/components/ProfileModal";
 
 export default function StudentDashboard() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("overview");
-
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && (!user || user.role !== "student")) {
@@ -50,8 +49,14 @@ export default function StudentDashboard() {
   return (
     <div className={styles.dashboardContainer}>
       <ProfileModal user={user} isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
+      {/* Mobile Backdrop */}
+      <div 
+        className={`${styles.drawerBackdrop} ${isMobileMenuOpen ? styles.mobileOpen : ''}`} 
+        onClick={() => setIsMobileMenuOpen(false)}
+      />
+
       <motion.aside 
-        className={styles.sidebar}
+        className={`${styles.sidebar} ${isMobileMenuOpen ? styles.mobileOpen : ''}`}
         initial={{ x: -300, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
@@ -63,19 +68,19 @@ export default function StudentDashboard() {
         </div>
         
         <nav className={styles.navMenu}>
-          <button className={`${styles.navItem} ${activeTab === 'overview' ? styles.active : ''}`} onClick={() => setActiveTab('overview')}>
+          <button className={`${styles.navItem} ${activeTab === 'overview' ? styles.active : ''}`} onClick={() => { setActiveTab('overview'); setIsMobileMenuOpen(false); }}>
             <Activity size={20} /> Live Feed
           </button>
-          <button className={`${styles.navItem} ${activeTab === 'ai-tools' ? styles.active : ''}`} onClick={() => setActiveTab('ai-tools')}>
+          <button className={`${styles.navItem} ${activeTab === 'ai-tools' ? styles.active : ''}`} onClick={() => { setActiveTab('ai-tools'); setIsMobileMenuOpen(false); }}>
             <Bot size={20} /> Study Tools
           </button>
-          <button className={`${styles.navItem} ${activeTab === 'assignments' ? styles.active : ''}`} onClick={() => setActiveTab('assignments')}>
+          <button className={`${styles.navItem} ${activeTab === 'assignments' ? styles.active : ''}`} onClick={() => { setActiveTab('assignments'); setIsMobileMenuOpen(false); }}>
             <FileText size={20} /> Assignments
           </button>
-          <button className={`${styles.navItem} ${activeTab === 'results' ? styles.active : ''}`} onClick={() => setActiveTab('results')}>
+          <button className={`${styles.navItem} ${activeTab === 'results' ? styles.active : ''}`} onClick={() => { setActiveTab('results'); setIsMobileMenuOpen(false); }}>
             <CheckCircle size={20} /> Results
           </button>
-          <button className={`${styles.navItem} ${activeTab === 'fees' ? styles.active : ''}`} onClick={() => setActiveTab('fees')}>
+          <button className={`${styles.navItem} ${activeTab === 'fees' ? styles.active : ''}`} onClick={() => { setActiveTab('fees'); setIsMobileMenuOpen(false); }}>
             <DollarSign size={20} /> Fees
           </button>
         </nav>
@@ -104,7 +109,7 @@ export default function StudentDashboard() {
               cursor: 'pointer'
             }}>Get Pro</button>
           </div>
-          <div className={styles.userInfo} onClick={() => setIsProfileOpen(true)} style={{ cursor: 'pointer' }}>
+          <div className={styles.userInfo} onClick={() => { setIsProfileOpen(true); setIsMobileMenuOpen(false); }} style={{ cursor: 'pointer' }}>
             <div className={styles.avatar}>{user.email?.charAt(0).toUpperCase()}</div>
             <div className={styles.userDetails}>
               <span className={styles.userName}>{user.name || "Student"} <Bot size={12} style={{ opacity: 0.5, marginLeft: '4px' }} /></span>
@@ -124,6 +129,9 @@ export default function StudentDashboard() {
         transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
       >
         <header className={styles.topHeader}>
+          <button className={styles.menuToggle} onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
           <WordsPullUpMultiStyle 
             segments={[{ text: activeTab.replace('-', ' '), className: 'capitalize' }]}
             className="text-3xl font-bold"
@@ -246,27 +254,65 @@ function StudentAITools() {
 function StudentAssignments() {
   const { user } = useAuth();
   const [assignments, setAssignments] = useState<any[]>([]);
+  const [submissions, setSubmissions] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
+  const [selectedAss, setSelectedAss] = useState<any>(null);
+  const [submissionText, setSubmissionText] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const fetchData = async () => {
+    try {
+      const stuQ = query(collection(db, "students"), where("email", "==", user?.email));
+      const stuSnap = await getDocs(stuQ);
+      if (!stuSnap.empty) {
+        const grade = stuSnap.docs[0].data().grade;
+        const assQ = query(collection(db, "assignments"), where("grade", "==", grade), orderBy("timestamp", "desc"));
+        const assSnap = await getDocs(assQ);
+        setAssignments(assSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      }
+
+      // Fetch my submissions
+      const subQ = query(collection(db, "submissions"), where("studentId", "==", user?.uid));
+      const subSnap = await getDocs(subQ);
+      const subMap: Record<string, boolean> = {};
+      subSnap.forEach(doc => {
+        subMap[doc.data().assignmentId] = true;
+      });
+      setSubmissions(subMap);
+    } catch (err) {
+      console.error("Error fetching assignments:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchAssignments = async () => {
-      try {
-        const stuQ = query(collection(db, "students"), where("email", "==", user?.email));
-        const stuSnap = await getDocs(stuQ);
-        if (!stuSnap.empty) {
-          const grade = stuSnap.docs[0].data().grade;
-          const assQ = query(collection(db, "assignments"), where("grade", "==", grade), orderBy("timestamp", "desc"));
-          const assSnap = await getDocs(assQ);
-          setAssignments(assSnap.docs.map(d => d.data()));
-        }
-      } catch (err) {
-        console.error("Error fetching assignments:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (user) fetchAssignments();
+    if (user) fetchData();
   }, [user]);
+
+  const handleSubmit = async () => {
+    if (!submissionText || !selectedAss) return;
+    setSubmitting(true);
+    try {
+      await addDoc(collection(db, "submissions"), {
+        assignmentId: selectedAss.id,
+        assignmentTitle: selectedAss.title,
+        teacherId: selectedAss.teacherId,
+        studentId: user?.uid,
+        studentName: user?.name || user?.email,
+        content: submissionText,
+        timestamp: serverTimestamp()
+      });
+      alert("Work submitted successfully!");
+      setSubmissionText("");
+      setSelectedAss(null);
+      fetchData();
+    } catch (err) {
+      console.error("Error submitting work:", err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className={`glass fade-in`} style={{ padding: '2rem' }}>
@@ -275,19 +321,49 @@ function StudentAssignments() {
       
       {loading ? <p>Loading assignments...</p> : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {assignments.map((ass, i) => (
-            <div key={i} className="glass" style={{ padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
+          {assignments.map((ass) => (
+            <div key={ass.id} className="glass" style={{ padding: '1.5rem', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
+              <div style={{ flex: 1, minWidth: '200px' }}>
                 <h4 style={{ fontWeight: 700 }}>{ass.title}</h4>
                 <p style={{ fontSize: '0.9rem', color: '#64748b' }}>{ass.description}</p>
                 <p style={{ fontSize: '0.8rem', color: '#dc2626', marginTop: '0.5rem' }}>Due: {ass.dueDate}</p>
               </div>
-              <button className="btn-secondary">Submit Work</button>
+              {submissions[ass.id] ? (
+                <span style={{ color: '#059669', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <CheckCircle size={18} /> Submitted
+                </span>
+              ) : (
+                <button className="btn-secondary" onClick={() => setSelectedAss(ass)}>Submit Work</button>
+              )}
             </div>
           ))}
           {assignments.length === 0 && <p style={{ color: '#64748b' }}>No assignments found for your grade.</p>}
         </div>
       )}
+
+      <AnimatePresence>
+        {selectedAss && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className={styles.submissionArea}
+          >
+            <h3>Submitting: {selectedAss.title}</h3>
+            <textarea 
+              placeholder="Paste your work here or add a note for the teacher..."
+              value={submissionText}
+              onChange={(e) => setSubmissionText(e.target.value)}
+            />
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button className="btn-primary" onClick={handleSubmit} disabled={submitting}>
+                {submitting ? "Submitting..." : "Send Submission"}
+              </button>
+              <button className="btn-secondary" onClick={() => setSelectedAss(null)}>Cancel</button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

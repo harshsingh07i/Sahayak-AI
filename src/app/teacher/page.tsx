@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { Users, FileText, Bot, DollarSign, LogOut, CheckCircle, XCircle } from "lucide-react";
+import { Users, FileText, Bot, DollarSign, LogOut, CheckCircle, XCircle, Menu, X, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { WordsPullUpMultiStyle } from "@/components/animations/WordsPullUp";
 import styles from "./teacher.module.css";
@@ -15,9 +15,8 @@ import ProfileModal from "@/components/ProfileModal";
 export default function TeacherDashboard() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("overview");
-
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && (!user || user.role !== "teacher")) {
@@ -50,8 +49,14 @@ export default function TeacherDashboard() {
   return (
     <div className={styles.dashboardContainer}>
       <ProfileModal user={user} isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
+      {/* Mobile Backdrop */}
+      <div 
+        className={`${styles.drawerBackdrop} ${isMobileMenuOpen ? styles.mobileOpen : ''}`} 
+        onClick={() => setIsMobileMenuOpen(false)}
+      />
+
       <motion.aside 
-        className={styles.sidebar}
+        className={`${styles.sidebar} ${isMobileMenuOpen ? styles.mobileOpen : ''}`}
         initial={{ x: -300, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
@@ -63,19 +68,19 @@ export default function TeacherDashboard() {
         </div>
         
         <nav className={styles.navMenu}>
-          <button className={`${styles.navItem} ${activeTab === 'overview' ? styles.active : ''}`} onClick={() => setActiveTab('overview')}>
+          <button className={`${styles.navItem} ${activeTab === 'overview' ? styles.active : ''}`} onClick={() => { setActiveTab('overview'); setIsMobileMenuOpen(false); }}>
             <Users size={20} /> Overview
           </button>
-          <button className={`${styles.navItem} ${activeTab === 'attendance' ? styles.active : ''}`} onClick={() => setActiveTab('attendance')}>
+          <button className={`${styles.navItem} ${activeTab === 'attendance' ? styles.active : ''}`} onClick={() => { setActiveTab('attendance'); setIsMobileMenuOpen(false); }}>
             <CheckCircle size={20} /> Attendance
           </button>
-          <button className={`${styles.navItem} ${activeTab === 'ai-tools' ? styles.active : ''}`} onClick={() => setActiveTab('ai-tools')}>
+          <button className={`${styles.navItem} ${activeTab === 'ai-tools' ? styles.active : ''}`} onClick={() => { setActiveTab('ai-tools'); setIsMobileMenuOpen(false); }}>
             <Bot size={20} /> AI Tools Hub
           </button>
-          <button className={`${styles.navItem} ${activeTab === 'assignments' ? styles.active : ''}`} onClick={() => setActiveTab('assignments')}>
+          <button className={`${styles.navItem} ${activeTab === 'assignments' ? styles.active : ''}`} onClick={() => { setActiveTab('assignments'); setIsMobileMenuOpen(false); }}>
             <FileText size={20} /> Assignments
           </button>
-          <button className={`${styles.navItem} ${activeTab === 'fees' ? styles.active : ''}`} onClick={() => setActiveTab('fees')}>
+          <button className={`${styles.navItem} ${activeTab === 'fees' ? styles.active : ''}`} onClick={() => { setActiveTab('fees'); setIsMobileMenuOpen(false); }}>
             <DollarSign size={20} /> Fees Tracker
           </button>
         </nav>
@@ -104,7 +109,7 @@ export default function TeacherDashboard() {
               cursor: 'pointer'
             }}>Get Pro</button>
           </div>
-          <div className={styles.userInfo} onClick={() => setIsProfileOpen(true)} style={{ cursor: 'pointer' }}>
+          <div className={styles.userInfo} onClick={() => { setIsProfileOpen(true); setIsMobileMenuOpen(false); }} style={{ cursor: 'pointer' }}>
             <div className={styles.avatar}>{user.email?.charAt(0).toUpperCase()}</div>
             <div className={styles.userDetails}>
               <span className={styles.userName}>{user.name || "Teacher"} <Bot size={12} style={{ opacity: 0.5, marginLeft: '4px' }} /></span>
@@ -124,6 +129,9 @@ export default function TeacherDashboard() {
         transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
       >
         <header className={styles.topHeader}>
+          <button className={styles.menuToggle} onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
           <WordsPullUpMultiStyle 
             segments={[{ text: activeTab.replace('-', ' '), className: 'capitalize' }]}
             className="text-3xl font-bold"
@@ -287,7 +295,32 @@ function AssignmentsManager() {
   const [grade, setGrade] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [recentAssignments, setRecentAssignments] = useState<any[]>([]);
+  const [submissions, setSubmissions] = useState<any[]>([]);
   const { user } = useAuth();
+
+  const fetchAssignments = async () => {
+    const q = query(collection(db, "assignments"), where("teacherId", "==", user?.uid), orderBy("timestamp", "desc"));
+    const snap = await getDocs(q);
+    setRecentAssignments(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+  };
+
+  const fetchSubmissions = async () => {
+    const q = query(
+      collection(db, "submissions"), 
+      where("teacherId", "==", user?.uid),
+      orderBy("timestamp", "desc")
+    );
+    const snap = await getDocs(q);
+    setSubmissions(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchAssignments();
+      fetchSubmissions();
+    }
+  }, [user]);
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -308,6 +341,7 @@ function AssignmentsManager() {
       setGrade("");
       setDueDate("");
       alert("Assignment uploaded successfully!");
+      fetchAssignments();
     } catch (err) {
       console.error("Error uploading assignment:", err);
     } finally {
@@ -316,41 +350,78 @@ function AssignmentsManager() {
   };
 
   return (
-    <div className={`glass fade-in`} style={{ padding: '2rem' }}>
-      <div style={{ marginBottom: '2rem' }}>
-        <h2>Create New Assignment</h2>
-        <p style={{ color: '#64748b' }}>Assignments will be synced to all students in the selected grade.</p>
+    <div className="fade-in">
+      <div className={`glass`} style={{ padding: '2rem', marginBottom: '2rem' }}>
+        <div style={{ marginBottom: '2rem' }}>
+          <h2>Create New Assignment</h2>
+          <p style={{ color: '#64748b' }}>Assignments will be synced to all students in the selected grade.</p>
+        </div>
+
+        <form onSubmit={handleUpload} className={styles.aiToolsGrid} style={{ gridTemplateColumns: '1fr' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <input 
+              type="text" placeholder="Assignment Title" value={title} 
+              onChange={e => setTitle(e.target.value)} className={styles.toolCard} 
+              style={{ width: '100%', padding: '1rem', background: '#f8fafc' }}
+            />
+            <textarea 
+              placeholder="Description / Instructions" value={desc} 
+              onChange={e => setDesc(e.target.value)} className={styles.toolCard}
+              style={{ width: '100%', padding: '1rem', background: '#f8fafc', minHeight: '100px' }}
+            />
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+              <input 
+                type="text" placeholder="Grade (e.g. 10th)" value={grade} 
+                onChange={e => setGrade(e.target.value)} className={styles.toolCard}
+                style={{ flex: 1, minWidth: '150px', padding: '1rem', background: '#f8fafc' }}
+              />
+              <input 
+                type="date" value={dueDate} 
+                onChange={e => setDueDate(e.target.value)} className={styles.toolCard}
+                style={{ flex: 1, minWidth: '150px', padding: '1rem', background: '#f8fafc' }}
+              />
+            </div>
+            <button type="submit" className="btn-primary" disabled={uploading} style={{ padding: '1rem' }}>
+              {uploading ? "Uploading..." : "Publish Assignment"}
+            </button>
+          </div>
+        </form>
       </div>
 
-      <form onSubmit={handleUpload} className={styles.aiToolsGrid} style={{ gridTemplateColumns: '1fr' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <input 
-            type="text" placeholder="Assignment Title" value={title} 
-            onChange={e => setTitle(e.target.value)} className={styles.toolCard} 
-            style={{ width: '100%', padding: '1rem', background: '#f8fafc' }}
-          />
-          <textarea 
-            placeholder="Description / Instructions" value={desc} 
-            onChange={e => setDesc(e.target.value)} className={styles.toolCard}
-            style={{ width: '100%', padding: '1rem', background: '#f8fafc', minHeight: '100px' }}
-          />
-          <div style={{ display: 'flex', gap: '1rem' }}>
-            <input 
-              type="text" placeholder="Grade (e.g. 10th)" value={grade} 
-              onChange={e => setGrade(e.target.value)} className={styles.toolCard}
-              style={{ flex: 1, padding: '1rem', background: '#f8fafc' }}
-            />
-            <input 
-              type="date" value={dueDate} 
-              onChange={e => setDueDate(e.target.value)} className={styles.toolCard}
-              style={{ flex: 1, padding: '1rem', background: '#f8fafc' }}
-            />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+        <div className="glass" style={{ padding: '2rem' }}>
+          <h3>Recent Uploads</h3>
+          <div className={styles.submissionList}>
+            {recentAssignments.map(ass => (
+              <div key={ass.id} className={styles.submissionItem}>
+                <div className={styles.submissionInfo}>
+                  <h4>{ass.title}</h4>
+                  <p>Grade: {ass.grade} | Due: {ass.dueDate}</p>
+                </div>
+                <ChevronRight size={18} color="#94a3b8" />
+              </div>
+            ))}
+            {recentAssignments.length === 0 && <p style={{ color: '#64748b' }}>No assignments uploaded yet.</p>}
           </div>
-          <button type="submit" className="btn-primary" disabled={uploading} style={{ padding: '1rem' }}>
-            {uploading ? "Uploading..." : "Publish Assignment"}
-          </button>
         </div>
-      </form>
+
+        <div className="glass" style={{ padding: '2rem' }}>
+          <h3>Student Submissions</h3>
+          <div className={styles.submissionList}>
+            {submissions.map(sub => (
+              <div key={sub.id} className={styles.submissionItem}>
+                <div className={styles.submissionInfo}>
+                  <h4>{sub.studentName}</h4>
+                  <p>Assignment: {sub.assignmentTitle}</p>
+                  <p style={{ fontSize: '0.75rem', marginTop: '4px' }}>{new Date(sub.timestamp?.seconds * 1000).toLocaleDateString()}</p>
+                </div>
+                <span className={styles.submissionStatus}>Submitted</span>
+              </div>
+            ))}
+            {submissions.length === 0 && <p style={{ color: '#64748b' }}>No submissions received yet.</p>}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
