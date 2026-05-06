@@ -23,8 +23,8 @@
   flex-direction: column;
   position: fixed;
   height: 100vh;
-  z-index: 100;
-  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.08);
+  z-index: 1000;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -396,14 +396,15 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
-  z-index: 90;
+  z-index: 900;
 }
 
 @media (max-width: 1024px) {
   .sidebar {
     transform: translateX(-100%);
+    width: 280px;
   }
   .sidebar.mobileOpen {
     transform: translateX(0);
@@ -419,12 +420,21 @@
   }
 }
 
+@media (max-width: 480px) {
+  .sidebar {
+    width: 100%;
+  }
+}
+
 @media (max-width: 768px) {
   .feedGrid, .aiToolsGrid, .statsGrid {
     grid-template-columns: 1fr;
   }
   .topHeader {
     padding: 0 1rem;
+  }
+  .topHeader h1, .topHeader div {
+    font-size: 1.25rem !important;
   }
   .contentArea {
     padding: 1.25rem 1rem;

@@ -3,20 +3,20 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { BookOpen, DollarSign, LogOut, CheckCircle, Activity, User, Bot } from "lucide-react";
+import { BookOpen, DollarSign, LogOut, CheckCircle, Activity, User, Bot, Menu, X, FileText } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { WordsPullUpMultiStyle } from "@/components/animations/WordsPullUp";
 import styles from "./parent.module.css";
 import { auth, db } from "@/lib/firebase";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import ProfileModal from "@/components/ProfileModal";
 
 export default function ParentDashboard() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("overview");
-
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && (!user || user.role !== "parent")) {
@@ -37,6 +37,8 @@ export default function ParentDashboard() {
         return <PerformancePortal />;
       case "attendance":
         return <AttendanceTracker />;
+      case "assignments":
+        return <ParentAssignments />;
       case "fees":
         return <FeesPortal />;
       default:
@@ -47,8 +49,14 @@ export default function ParentDashboard() {
   return (
     <div className={styles.dashboardContainer}>
       <ProfileModal user={user} isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
+      {/* Mobile Backdrop */}
+      <div 
+        className={`${styles.drawerBackdrop} ${isMobileMenuOpen ? styles.mobileOpen : ''}`} 
+        onClick={() => setIsMobileMenuOpen(false)}
+      />
+
       <motion.aside 
-        className={styles.sidebar}
+        className={`${styles.sidebar} ${isMobileMenuOpen ? styles.mobileOpen : ''}`}
         initial={{ x: -300, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
@@ -60,16 +68,19 @@ export default function ParentDashboard() {
         </div>
         
         <nav className={styles.navMenu}>
-          <button className={`${styles.navItem} ${activeTab === 'overview' ? styles.active : ''}`} onClick={() => setActiveTab('overview')}>
+          <button className={`${styles.navItem} ${activeTab === 'overview' ? styles.active : ''}`} onClick={() => { setActiveTab('overview'); setIsMobileMenuOpen(false); }}>
             <Activity size={20} /> Live Overview
           </button>
-          <button className={`${styles.navItem} ${activeTab === 'performance' ? styles.active : ''}`} onClick={() => setActiveTab('performance')}>
+          <button className={`${styles.navItem} ${activeTab === 'performance' ? styles.active : ''}`} onClick={() => { setActiveTab('performance'); setIsMobileMenuOpen(false); }}>
             <BookOpen size={20} /> Performance
           </button>
-          <button className={`${styles.navItem} ${activeTab === 'attendance' ? styles.active : ''}`} onClick={() => setActiveTab('attendance')}>
+          <button className={`${styles.navItem} ${activeTab === 'assignments' ? styles.active : ''}`} onClick={() => { setActiveTab('assignments'); setIsMobileMenuOpen(false); }}>
+            <FileText size={20} /> Assignments
+          </button>
+          <button className={`${styles.navItem} ${activeTab === 'attendance' ? styles.active : ''}`} onClick={() => { setActiveTab('attendance'); setIsMobileMenuOpen(false); }}>
             <CheckCircle size={20} /> Attendance
           </button>
-          <button className={`${styles.navItem} ${activeTab === 'fees' ? styles.active : ''}`} onClick={() => setActiveTab('fees')}>
+          <button className={`${styles.navItem} ${activeTab === 'fees' ? styles.active : ''}`} onClick={() => { setActiveTab('fees'); setIsMobileMenuOpen(false); }}>
             <DollarSign size={20} /> Fees
           </button>
         </nav>
@@ -98,7 +109,7 @@ export default function ParentDashboard() {
               cursor: 'pointer'
             }}>Get Pro</button>
           </div>
-          <div className={styles.userInfo} onClick={() => setIsProfileOpen(true)} style={{ cursor: 'pointer' }}>
+          <div className={styles.userInfo} onClick={() => { setIsProfileOpen(true); setIsMobileMenuOpen(false); }} style={{ cursor: 'pointer' }}>
             <div className={styles.avatar}>{user.email?.charAt(0).toUpperCase()}</div>
             <div className={styles.userDetails}>
               <span className={styles.userName}>{user.name || "Parent"} <Bot size={12} style={{ opacity: 0.5, marginLeft: '4px' }} /></span>
@@ -118,6 +129,9 @@ export default function ParentDashboard() {
         transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
       >
         <header className={styles.topHeader}>
+          <button className={styles.menuToggle} onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
           <WordsPullUpMultiStyle 
             segments={[{ text: activeTab.replace('-', ' '), className: 'capitalize' }]}
             className="text-3xl font-bold"
@@ -229,6 +243,77 @@ function AttendanceTracker() {
     </div>
   );
 }
+
+function ParentAssignments() {
+  const { user } = useAuth();
+  const [childData, setChildData] = useState<any>(null);
+  const [assignments, setAssignments] = useState<any[]>([]);
+  const [submissions, setSubmissions] = useState<Record<string, boolean>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAssignments = async () => {
+      try {
+        const stuQ = query(collection(db, "students"), where("parentEmail", "==", user?.email));
+        const stuSnap = await getDocs(stuQ);
+        if (!stuSnap.empty) {
+          const child = stuSnap.docs[0].data();
+          const childId = stuSnap.docs[0].id;
+          setChildData(child);
+
+          // Fetch assignments for child's grade
+          const assQ = query(collection(db, "assignments"), where("grade", "==", child.grade), orderBy("timestamp", "desc"));
+          const assSnap = await getDocs(assQ);
+          setAssignments(assSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+
+          // Fetch child's submissions
+          const subQ = query(collection(db, "submissions"), where("studentId", "==", childId));
+          const subSnap = await getDocs(subQ);
+          const subMap: Record<string, boolean> = {};
+          subSnap.forEach(doc => {
+            subMap[doc.data().assignmentId] = true;
+          });
+          setSubmissions(subMap);
+        }
+      } catch (err) {
+        console.error("Error fetching assignments:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (user) fetchAssignments();
+  }, [user]);
+
+  return (
+    <div className={`glass fade-in`} style={{ padding: '2rem' }}>
+      <h2>Child's Assignments</h2>
+      <p style={{ color: '#64748b', marginBottom: '2rem' }}>Track academic tasks and completion status for {childData?.name || "your child"}.</p>
+      
+      {loading ? <p>Loading assignments...</p> : (
+        <div className={styles.assignmentList}>
+          {assignments.map((ass) => (
+            <div key={ass.id} className={styles.assignmentCard}>
+              <div>
+                <h4 style={{ fontWeight: 700 }}>{ass.title}</h4>
+                <p style={{ fontSize: '0.9rem', color: '#64748b' }}>{ass.description}</p>
+                <p style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.5rem' }}>Teacher: {ass.teacherName} | Due: {ass.dueDate}</p>
+              </div>
+              <div>
+                {submissions[ass.id] ? (
+                  <span className={`${styles.statusBadge} ${styles.statusDone}`}>Completed</span>
+                ) : (
+                  <span className={`${styles.statusBadge} ${styles.statusPending}`}>Pending</span>
+                )}
+              </div>
+            </div>
+          ))}
+          {assignments.length === 0 && <p style={{ color: '#64748b' }}>No assignments found for Grade {childData?.grade}.</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 function FeesPortal() {
   const { user } = useAuth();
