@@ -50,17 +50,15 @@ export default function StudentDashboard() {
   return (
     <div className={styles.dashboardContainer}>
       <ProfileModal user={user} isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
-      {/* Mobile Backdrop */}
-      <div 
-        className={`${styles.drawerBackdrop} ${isMobileMenuOpen ? styles.mobileOpen : ''}`} 
-        onClick={() => setIsMobileMenuOpen(false)}
-      />
+      {isMobileMenuOpen && (
+        <div className={styles.drawerBackdrop} onClick={() => setIsMobileMenuOpen(false)} />
+      )}
 
       <motion.aside 
         className={`${styles.sidebar} ${isMobileMenuOpen ? styles.mobileOpen : ''}`}
-        initial={{ x: -300, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6 }}
       >
         <div className={styles.sidebarHeader}>
           <img src="/logo.png" alt="Logo" width={40} height={40} className={styles.sidebarLogo} />

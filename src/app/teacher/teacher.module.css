@@ -167,7 +167,6 @@
   display: flex;
   flex-direction: column;
   background: #f7f8fc;
-  transition: margin-left 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .topHeader {
@@ -371,7 +370,6 @@
 }
 
 .drawerBackdrop {
-  display: none;
   position: fixed;
   top: 0;
   left: 0;
@@ -380,6 +378,7 @@
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
   z-index: 900;
+  cursor: pointer;
 }
 
 @media (max-width: 1024px) {
