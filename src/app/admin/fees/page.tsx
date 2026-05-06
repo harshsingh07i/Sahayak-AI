@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, doc, updateDoc, addDoc } from "firebase/firestore";
-import { CreditCard, Search, IndianRupee, TrendingUp, TrendingDown, AlertCircle, CheckCircle2, X } from "lucide-react";
+import { CreditCard, Search, IndianRupee, TrendingUp, TrendingDown, AlertCircle, CheckCircle2, X, Filter } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import styles from "../admin.module.css";
 
 interface Student {
@@ -141,63 +142,74 @@ export default function FeesPage() {
     return matchesSearch && matchesStatus;
   });
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { 
+      opacity: 1,
+      transition: { staggerChildren: 0.1 }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
+  };
+
   return (
-    <div>
+    <motion.div initial="hidden" animate="visible" variants={containerVariants}>
       {/* Stats */}
-      <div className={styles.statsRow}>
+      <motion.div className={styles.statsRow} variants={itemVariants}>
         <div className={`glass ${styles.statCard}`} style={{ background: '#f8fafc', borderColor: '#e2e8f0' }}>
           <span className={styles.statCount} style={{ color: "#1e293b" }}>
-            <IndianRupee size={18} style={{ display: 'inline' }} />{totalFees.toLocaleString()}
+            <IndianRupee size={22} />{totalFees.toLocaleString()}
           </span>
-          <span className={styles.statLabel} style={{ color: '#64748b', opacity: 0.7 }}>Total Fees</span>
+          <span className={styles.statLabel}>Total Dues</span>
         </div>
         <div className={`glass ${styles.statCard}`} style={{ background: '#f0fdf4', borderColor: '#dcfce7' }}>
           <span className={styles.statCount} style={{ color: "#16a34a" }}>
-            <TrendingUp size={18} style={{ display: 'inline' }} />{totalCollected.toLocaleString()}
+            <TrendingUp size={22} />{totalCollected.toLocaleString()}
           </span>
-          <span className={styles.statLabel} style={{ color: '#16a34a', opacity: 0.7 }}>Collected</span>
+          <span className={styles.statLabel}>Collected</span>
         </div>
         <div className={`glass ${styles.statCard}`} style={{ background: '#fef2f2', borderColor: '#fecaca' }}>
           <span className={styles.statCount} style={{ color: "#dc2626" }}>
-            <TrendingDown size={18} style={{ display: 'inline' }} />{totalBalance.toLocaleString()}
+            <TrendingDown size={22} />{totalBalance.toLocaleString()}
           </span>
-          <span className={styles.statLabel} style={{ color: '#dc2626', opacity: 0.7 }}>Outstanding</span>
+          <span className={styles.statLabel}>Outstanding</span>
         </div>
         <div className={`glass ${styles.statCard}`} style={{ background: '#ecfdf5', borderColor: '#a7f3d0' }}>
           <span className={styles.statCount} style={{ color: "#059669" }}>{paidCount}</span>
-          <span className={styles.statLabel} style={{ color: '#059669', opacity: 0.7 }}>Fully Paid</span>
+          <span className={styles.statLabel}>Fully Paid</span>
         </div>
-        <div className={`glass ${styles.statCard}`} style={{ background: '#fffbeb', borderColor: '#fde68a' }}>
-          <span className={styles.statCount} style={{ color: "#d97706" }}>{pendingCount}</span>
-          <span className={styles.statLabel} style={{ color: '#d97706', opacity: 0.7 }}>Pending</span>
-        </div>
-      </div>
+      </motion.div>
 
       {/* Fee Table */}
-      <div className="glass" style={{ padding: '2rem', marginTop: '2rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-          <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <CreditCard size={20} className="text-gradient" /> Fee Management
+      <motion.div className="glass" style={{ padding: '2rem', marginTop: '2rem' }} variants={itemVariants}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+          <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.4rem', fontWeight: 800 }}>
+            <CreditCard size={24} className="text-gradient" /> Fee Management
           </h3>
-          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
             <div className={styles.searchBox}>
-              <Search size={16} />
+              <Search size={18} />
               <input
                 type="text"
                 placeholder="Search students..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className={styles.searchInput}
+                style={{ width: '200px' }}
               />
             </div>
             <div className={styles.filterTabs}>
+              <Filter size={14} style={{ marginLeft: '0.5rem', opacity: 0.5 }} />
               {["all", "paid", "partial", "pending"].map(s => (
                 <button
                   key={s}
                   className={`${styles.filterTab} ${filterStatus === s ? styles.filterTabActive : ""}`}
                   onClick={() => setFilterStatus(s)}
                 >
-                  {s.charAt(0).toUpperCase() + s.slice(1)}
+                  {s}
                 </button>
               ))}
             </div>
@@ -208,167 +220,253 @@ export default function FeesPage() {
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>Student</th>
+                <th>Student Details</th>
                 <th>Grade</th>
                 <th>Total Fee</th>
-                <th>Paid</th>
+                <th>Paid Amount</th>
                 <th>Balance</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filteredStudents.length === 0 ? (
-                <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>
-                    No students found.
-                  </td>
-                </tr>
-              ) : (
-                filteredStudents.map((s) => (
-                  <tr key={s.id}>
-                    <td>
-                      <div>
-                        <span style={{ fontWeight: 600 }}>{s.name}</span>
-                        <br />
-                        <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>{s.email}</span>
+              <AnimatePresence>
+                {filteredStudents.length === 0 ? (
+                  <motion.tr initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                    <td colSpan={7} style={{ textAlign: 'center', color: '#64748b', padding: '4rem' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                        <Search size={40} style={{ opacity: 0.2 }} />
+                        No students found matching your criteria.
                       </div>
                     </td>
-                    <td><span className={styles.gradeBadge}>{s.grade || "—"}</span></td>
-                    <td style={{ fontWeight: 600 }}>₹{s.totalFee.toLocaleString()}</td>
-                    <td style={{ color: '#34d399' }}>₹{s.paidAmount.toLocaleString()}</td>
-                    <td style={{ color: s.balance > 0 ? '#ef4444' : '#34d399', fontWeight: 600 }}>₹{s.balance.toLocaleString()}</td>
-                    <td>
-                      <span className={styles.statusBadge} data-status={s.status}>
-                        {s.status === "paid" && <CheckCircle2 size={14} />}
-                        {s.status === "partial" && <AlertCircle size={14} />}
-                        {s.status === "pending" && <AlertCircle size={14} />}
-                        {s.status}
-                      </span>
-                    </td>
-                    <td>
-                      <div className={styles.actionBtns}>
-                        <button
-                          className={styles.actionBtnPrimary}
-                          onClick={() => { setSelectedStudent(s); setFeeAmount(String(s.totalFee || "")); setShowFeeSetModal(true); }}
-                        >
-                          Set Fee
-                        </button>
-                        <button
-                          className={styles.actionBtnSuccess}
-                          onClick={() => { setSelectedStudent(s); setShowPaymentModal(true); }}
-                          disabled={s.totalFee <= 0}
-                        >
-                          + Pay
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
+                  </motion.tr>
+                ) : (
+                  filteredStudents.map((s) => (
+                    <motion.tr 
+                      key={s.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 10 }}
+                      layout
+                    >
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <div className={styles.avatar} style={{ width: '36px', height: '36px', fontSize: '0.9rem' }}>
+                            {s.name?.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <span style={{ fontWeight: 700, color: '#1e293b' }}>{s.name}</span>
+                            <br />
+                            <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>{s.email}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td><span className={styles.gradeBadge}>{s.grade || "—"}</span></td>
+                      <td style={{ fontWeight: 700 }}>₹{s.totalFee.toLocaleString()}</td>
+                      <td style={{ color: '#10b981', fontWeight: 600 }}>₹{s.paidAmount.toLocaleString()}</td>
+                      <td style={{ color: s.balance > 0 ? '#ef4444' : '#10b981', fontWeight: 700 }}>₹{s.balance.toLocaleString()}</td>
+                      <td>
+                        <span className={styles.statusBadge} data-status={s.status}>
+                          {s.status === "paid" && <CheckCircle2 size={14} />}
+                          {s.status === "partial" && <AlertCircle size={14} />}
+                          {s.status === "pending" && <AlertCircle size={14} />}
+                          {s.status}
+                        </span>
+                      </td>
+                      <td>
+                        <div className={styles.actionBtns}>
+                          <button
+                            className={styles.actionBtnPrimary}
+                            onClick={() => { setSelectedStudent(s); setFeeAmount(String(s.totalFee || "")); setShowFeeSetModal(true); }}
+                          >
+                            Set Fee
+                          </button>
+                          <button
+                            className={styles.actionBtnSuccess}
+                            onClick={() => { setSelectedStudent(s); setShowPaymentModal(true); }}
+                            disabled={s.totalFee <= 0}
+                          >
+                            + Pay
+                          </button>
+                        </div>
+                      </td>
+                    </motion.tr>
+                  ))
+                )}
+              </AnimatePresence>
             </tbody>
           </table>
         </div>
-      </div>
+      </motion.div>
 
       {/* Recent Transactions */}
-      {transactions.length > 0 && (
-        <div className="glass" style={{ padding: '2rem', marginTop: '2rem' }}>
-          <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <IndianRupee size={20} className="text-gradient" /> Recent Transactions
-          </h3>
-          <div className={styles.transactionList}>
-            {transactions.slice(0, 10).map(t => (
-              <div key={t.id} className={styles.transactionItem}>
-                <div>
-                  <span style={{ fontWeight: 600 }}>{t.studentName}</span>
-                  <span style={{ color: '#94a3b8', fontSize: '0.8rem', marginLeft: '0.75rem' }}>
-                    {new Date(t.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <span style={{ color: '#64748b', fontSize: '0.85rem' }}>{t.note}</span>
-                  <span style={{ color: '#34d399', fontWeight: 700, fontSize: '1.05rem' }}>+₹{t.amount.toLocaleString()}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {transactions.length > 0 && (
+          <motion.div 
+            className="glass" 
+            style={{ padding: '2rem', marginTop: '2rem' }}
+            variants={itemVariants}
+          >
+            <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: 800 }}>
+              <IndianRupee size={22} className="text-gradient" /> Recent Transactions
+            </h3>
+            <div className={styles.transactionList}>
+              {transactions.slice(0, 8).map((t, idx) => (
+                <motion.div 
+                  key={t.id} 
+                  className={styles.transactionItem}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: idx * 0.05 }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{ background: '#ecfdf5', color: '#059669', padding: '0.5rem', borderRadius: '8px' }}>
+                      <TrendingUp size={18} />
+                    </div>
+                    <div>
+                      <span style={{ fontWeight: 700, color: '#1e293b' }}>{t.studentName}</span>
+                      <p style={{ color: '#94a3b8', fontSize: '0.75rem' }}>
+                        {new Date(t.date).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
+                      </p>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                    <span style={{ color: '#64748b', fontSize: '0.85rem', fontStyle: 'italic' }}>{t.note}</span>
+                    <span style={{ color: '#10b981', fontWeight: 800, fontSize: '1.1rem' }}>+₹{t.amount.toLocaleString()}</span>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Payment Modal */}
-      {showPaymentModal && selectedStudent && (
-        <div className={styles.modalOverlay} onClick={() => setShowPaymentModal(false)}>
-          <div className={`glass ${styles.modal}`} onClick={e => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h3>Record Payment</h3>
-              <button onClick={() => setShowPaymentModal(false)} className={styles.modalClose}><X size={20} /></button>
-            </div>
-            <p style={{ color: '#64748b', marginBottom: '1.5rem' }}>
-              Recording payment for <strong style={{ color: '#1e293b' }}>{selectedStudent.name}</strong>
-            </p>
-            <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '1rem' }}>
-              Total Fee: ₹{selectedStudent.totalFee.toLocaleString()} | Paid: ₹{selectedStudent.paidAmount.toLocaleString()} | Balance: ₹{selectedStudent.balance.toLocaleString()}
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div>
-                <label className={styles.label}>Payment Amount (₹)</label>
-                <input
-                  type="number"
-                  value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(e.target.value)}
-                  className={styles.input}
-                  placeholder="Enter amount"
-                  min="1"
-                  max={selectedStudent.balance}
-                />
+      {/* Modals */}
+      <AnimatePresence>
+        {showPaymentModal && selectedStudent && (
+          <motion.div 
+            className={styles.modalOverlay}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowPaymentModal(false)}
+          >
+            <motion.div 
+              className={`glass ${styles.modal}`} 
+              onClick={e => e.stopPropagation()}
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+            >
+              <div className={styles.modalHeader}>
+                <h3 style={{ fontWeight: 800 }}>Record Payment</h3>
+                <button onClick={() => setShowPaymentModal(false)} className={styles.modalClose}><X size={20} /></button>
               </div>
-              <div>
-                <label className={styles.label}>Note (optional)</label>
-                <input
-                  type="text"
-                  value={paymentNote}
-                  onChange={(e) => setPaymentNote(e.target.value)}
-                  className={styles.input}
-                  placeholder="e.g. Monthly installment"
-                />
+              <div style={{ padding: '1rem 0' }}>
+                <p style={{ color: '#64748b', marginBottom: '1.5rem' }}>
+                  Recording payment for <strong style={{ color: '#1e293b' }}>{selectedStudent.name}</strong>
+                </p>
+                <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '12px', marginBottom: '1.5rem', border: '1px solid #e2e8f0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                    <span style={{ color: '#64748b', fontSize: '0.85rem' }}>Total Fee:</span>
+                    <span style={{ fontWeight: 600 }}>₹{selectedStudent.totalFee.toLocaleString()}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                    <span style={{ color: '#64748b', fontSize: '0.85rem' }}>Already Paid:</span>
+                    <span style={{ color: '#10b981', fontWeight: 600 }}>₹{selectedStudent.paidAmount.toLocaleString()}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '0.5rem', borderTop: '1px dashed #cbd5e1' }}>
+                    <span style={{ fontWeight: 700 }}>Due Balance:</span>
+                    <span style={{ color: '#ef4444', fontWeight: 800 }}>₹{selectedStudent.balance.toLocaleString()}</span>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                  <div>
+                    <label className={styles.label}>Payment Amount (₹)</label>
+                    <input
+                      type="number"
+                      value={paymentAmount}
+                      onChange={(e) => setPaymentAmount(e.target.value)}
+                      className={styles.input}
+                      placeholder="Enter amount"
+                      min="1"
+                      max={selectedStudent.balance}
+                    />
+                  </div>
+                  <div>
+                    <label className={styles.label}>Note (optional)</label>
+                    <input
+                      type="text"
+                      value={paymentNote}
+                      onChange={(e) => setPaymentNote(e.target.value)}
+                      className={styles.input}
+                      placeholder="e.g. Cash, UPI, Installment"
+                    />
+                  </div>
+                  <button 
+                    className="btn-primary" 
+                    onClick={handleRecordPayment} 
+                    disabled={processing || !paymentAmount} 
+                    style={{ marginTop: '0.5rem', height: '3.5rem', fontSize: '1rem' }}
+                  >
+                    {processing ? "Processing..." : `Record ₹${paymentAmount || "0"} Payment`}
+                  </button>
+                </div>
               </div>
-              <button className="btn-primary" onClick={handleRecordPayment} disabled={processing || !paymentAmount} style={{ marginTop: '0.5rem' }}>
-                {processing ? "Processing..." : `Record ₹${paymentAmount || "0"} Payment`}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            </motion.div>
+          </motion.div>
+        )}
 
-      {/* Set Fee Modal */}
-      {showFeeSetModal && selectedStudent && (
-        <div className={styles.modalOverlay} onClick={() => setShowFeeSetModal(false)}>
-          <div className={`glass ${styles.modal}`} onClick={e => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h3>Set Total Fee</h3>
-              <button onClick={() => setShowFeeSetModal(false)} className={styles.modalClose}><X size={20} /></button>
-            </div>
-            <p style={{ color: '#64748b', marginBottom: '1.5rem' }}>
-              Setting total fee for <strong style={{ color: '#1e293b' }}>{selectedStudent.name}</strong>
-            </p>
-            <div>
-              <label className={styles.label}>Total Fee Amount (₹)</label>
-              <input
-                type="number"
-                value={feeAmount}
-                onChange={(e) => setFeeAmount(e.target.value)}
-                className={styles.input}
-                placeholder="e.g. 50000"
-                min="0"
-              />
-            </div>
-            <button className="btn-primary" onClick={handleSetFee} disabled={processing || !feeAmount} style={{ marginTop: '1.5rem' }}>
-              {processing ? "Saving..." : "Save Fee"}
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+        {showFeeSetModal && selectedStudent && (
+          <motion.div 
+            className={styles.modalOverlay}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowFeeSetModal(false)}
+          >
+            <motion.div 
+              className={`glass ${styles.modal}`} 
+              onClick={e => e.stopPropagation()}
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+            >
+              <div className={styles.modalHeader}>
+                <h3 style={{ fontWeight: 800 }}>Set Total Fee</h3>
+                <button onClick={() => setShowFeeSetModal(false)} className={styles.modalClose}><X size={20} /></button>
+              </div>
+              <div style={{ padding: '1rem 0' }}>
+                <p style={{ color: '#64748b', marginBottom: '1.5rem' }}>
+                  Updating total fee for <strong style={{ color: '#1e293b' }}>{selectedStudent.name}</strong>
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                  <div>
+                    <label className={styles.label}>Total Fee Amount (₹)</label>
+                    <input
+                      type="number"
+                      value={feeAmount}
+                      onChange={(e) => setFeeAmount(e.target.value)}
+                      className={styles.input}
+                      placeholder="e.g. 50000"
+                      min="0"
+                    />
+                  </div>
+                  <button 
+                    className="btn-primary" 
+                    onClick={handleSetFee} 
+                    disabled={processing || !feeAmount} 
+                    style={{ marginTop: '1.5rem', height: '3.5rem', fontSize: '1rem' }}
+                  >
+                    {processing ? "Saving..." : "Update Total Fee"}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }
+
