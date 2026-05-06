@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { WordsPullUpMultiStyle } from "@/components/animations/WordsPullUp";
 import styles from "./student.module.css";
 import { auth, db } from "@/lib/firebase";
-import { collection, query, where, getDocs, orderBy, limit, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, query, where, getDocs, orderBy, limit, addDoc, serverTimestamp, onSnapshot } from "firebase/firestore";
 import AIToolRunner from "@/components/AIToolRunner";
 import ProfileModal from "@/components/ProfileModal";
 
@@ -160,7 +160,11 @@ function StudentOverview() {
   const [assignments, setAssignments] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchStats = async () => {
+    if (!user) return;
+
+    let unsubscribeAss: () => void = () => {};
+
+    const fetchUserAndSubscribe = async () => {
       // Fetch attendance for today
       const today = new Date().toISOString().split('T')[0];
       const attQ = query(collection(db, "attendance"), where("studentId", "==", user?.uid), where("date", "==", today));
@@ -169,18 +173,25 @@ function StudentOverview() {
         setAttendance(attSnap.docs[0].data().status === 'present' ? "Marked Present Today" : "Marked Absent Today");
       }
 
-      // Fetch student grade first
+      // Fetch student grade
       const stuQ = query(collection(db, "students"), where("email", "==", user?.email));
       const stuSnap = await getDocs(stuQ);
       if (!stuSnap.empty) {
         const grade = stuSnap.docs[0].data().grade;
-        // Fetch recent assignments for this grade
+        
+        // Subscribe to assignments for this grade
         const assQ = query(collection(db, "assignments"), where("grade", "==", grade), orderBy("timestamp", "desc"), limit(2));
-        const assSnap = await getDocs(assQ);
-        setAssignments(assSnap.docs.map(d => d.data()));
+        unsubscribeAss = onSnapshot(assQ, (snap) => {
+          setAssignments(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        });
       }
     };
-    if (user) fetchStats();
+
+    fetchUserAndSubscribe();
+
+    return () => {
+      unsubscribeAss();
+    };
   }, [user]);
 
   return (
@@ -259,34 +270,49 @@ function StudentAssignments() {
   const [submissionText, setSubmissionText] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const fetchData = async () => {
-    try {
-      const stuQ = query(collection(db, "students"), where("email", "==", user?.email));
-      const stuSnap = await getDocs(stuQ);
-      if (!stuSnap.empty) {
-        const grade = stuSnap.docs[0].data().grade;
-        const assQ = query(collection(db, "assignments"), where("grade", "==", grade), orderBy("timestamp", "desc"));
-        const assSnap = await getDocs(assQ);
-        setAssignments(assSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-      }
-
-      // Fetch my submissions
-      const subQ = query(collection(db, "submissions"), where("studentId", "==", user?.uid));
-      const subSnap = await getDocs(subQ);
-      const subMap: Record<string, boolean> = {};
-      subSnap.forEach(doc => {
-        subMap[doc.data().assignmentId] = true;
-      });
-      setSubmissions(subMap);
-    } catch (err) {
-      console.error("Error fetching assignments:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    if (user) fetchData();
+    if (!user) return;
+
+    let unsubscribeAss: () => void = () => {};
+    let unsubscribeSub: () => void = () => {};
+
+    const fetchUserAndSubscribe = async () => {
+      try {
+        const stuQ = query(collection(db, "students"), where("email", "==", user?.email));
+        const stuSnap = await getDocs(stuQ);
+        if (!stuSnap.empty) {
+          const grade = stuSnap.docs[0].data().grade;
+          const assQ = query(collection(db, "assignments"), where("grade", "==", grade), orderBy("timestamp", "desc"));
+          
+          unsubscribeAss = onSnapshot(assQ, (snap) => {
+            setAssignments(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+            setLoading(false);
+          });
+        } else {
+          setLoading(false);
+        }
+
+        // Real-time submissions status
+        const subQ = query(collection(db, "submissions"), where("studentId", "==", user?.uid));
+        unsubscribeSub = onSnapshot(subQ, (snap) => {
+          const subMap: Record<string, boolean> = {};
+          snap.forEach(doc => {
+            subMap[doc.data().assignmentId] = true;
+          });
+          setSubmissions(subMap);
+        });
+      } catch (err) {
+        console.error("Error setting up assignments sync:", err);
+        setLoading(false);
+      }
+    };
+
+    fetchUserAndSubscribe();
+
+    return () => {
+      unsubscribeAss();
+      unsubscribeSub();
+    };
   }, [user]);
 
   const handleSubmit = async () => {
@@ -305,7 +331,7 @@ function StudentAssignments() {
       alert("Work submitted successfully!");
       setSubmissionText("");
       setSelectedAss(null);
-      fetchData();
+      // No need to call fetchData() as onSnapshot handles it!
     } catch (err) {
       console.error("Error submitting work:", err);
     } finally {

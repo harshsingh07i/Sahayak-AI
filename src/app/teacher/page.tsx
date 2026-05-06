@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { WordsPullUpMultiStyle } from "@/components/animations/WordsPullUp";
 import styles from "./teacher.module.css";
 import { auth, db } from "@/lib/firebase";
-import { collection, getDocs, addDoc, query, where, serverTimestamp, orderBy } from "firebase/firestore";
+import { collection, getDocs, addDoc, query, where, serverTimestamp, orderBy, onSnapshot } from "firebase/firestore";
 import AIToolRunner from "@/components/AIToolRunner";
 import ProfileModal from "@/components/ProfileModal";
 
@@ -298,27 +298,43 @@ function AssignmentsManager() {
   const [submissions, setSubmissions] = useState<any[]>([]);
   const { user } = useAuth();
 
-  const fetchAssignments = async () => {
-    const q = query(collection(db, "assignments"), where("teacherId", "==", user?.uid), orderBy("timestamp", "desc"));
-    const snap = await getDocs(q);
-    setRecentAssignments(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-  };
+  useEffect(() => {
+    if (!user) return;
 
-  const fetchSubmissions = async () => {
-    const q = query(
+    // Real-time Assignments
+    const assQ = query(
+      collection(db, "assignments"), 
+      where("teacherId", "==", user?.uid), 
+      orderBy("timestamp", "desc")
+    );
+    
+    const unsubscribeAss = onSnapshot(assQ, (snap) => {
+      setRecentAssignments(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, (err) => {
+      console.error("Assignments subscription error:", err);
+      // Fallback: try without orderBy if index is missing (temp fix)
+      if (err.message.includes("index")) {
+        console.warn("Please create the Firestore index for assignments!");
+      }
+    });
+
+    // Real-time Submissions
+    const subQ = query(
       collection(db, "submissions"), 
       where("teacherId", "==", user?.uid),
       orderBy("timestamp", "desc")
     );
-    const snap = await getDocs(q);
-    setSubmissions(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-  };
 
-  useEffect(() => {
-    if (user) {
-      fetchAssignments();
-      fetchSubmissions();
-    }
+    const unsubscribeSub = onSnapshot(subQ, (snap) => {
+      setSubmissions(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, (err) => {
+      console.error("Submissions subscription error:", err);
+    });
+
+    return () => {
+      unsubscribeAss();
+      unsubscribeSub();
+    };
   }, [user]);
 
   const handleUpload = async (e: React.FormEvent) => {
@@ -340,7 +356,7 @@ function AssignmentsManager() {
       setGrade("");
       setDueDate("");
       alert("Assignment uploaded successfully!");
-      fetchAssignments();
+      // No need to call fetchAssignments() as onSnapshot handles it!
     } catch (err) {
       console.error("Error uploading assignment:", err);
     } finally {
