@@ -15,6 +15,7 @@ import ProfileModal from "@/components/ProfileModal";
 export default function StudentDashboard() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState("overview");
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 

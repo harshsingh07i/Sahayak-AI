@@ -8,13 +8,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { WordsPullUpMultiStyle } from "@/components/animations/WordsPullUp";
 import styles from "./teacher.module.css";
 import { auth, db } from "@/lib/firebase";
-import { collection, getDocs, addDoc, query, where, serverTimestamp } from "firebase/firestore";
+import { collection, getDocs, addDoc, query, where, serverTimestamp, orderBy } from "firebase/firestore";
 import AIToolRunner from "@/components/AIToolRunner";
 import ProfileModal from "@/components/ProfileModal";
 
 export default function TeacherDashboard() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState("overview");
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
